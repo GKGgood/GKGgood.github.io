@@ -1,0 +1,58 @@
+---
+layout: default
+---
+
+{% assign entry_content = content | strip %}
+
+<article class="entry-layout">
+  <header class="entry-layout__header">
+    {% if page.section_name %}
+      <p class="entry-layout__eyebrow">{{ page.section_name }}</p>
+    {% endif %}
+    <div class="entry-layout__title-row">
+      <h1 class="entry-layout__title">{{ page.title }}</h1>
+      {% if page.phonetic %}
+        <p class="entry-layout__phonetic-inline">
+          <button class="pronounce-button" type="button" data-pronounce="{{ page.title | escape }}" aria-label="Play pronunciation for {{ page.title }}">🔊</button>
+          <span>{{ page.phonetic }}</span>
+        </p>
+      {% endif %}
+    </div>
+    {% if page.meaning %}
+      <p class="entry-layout__meaning">{{ page.meaning }}</p>
+    {% endif %}
+  </header>
+
+  {% if page.definition %}
+    <section class="entry-layout__section" aria-labelledby="entry-details-heading">
+      <h2 id="entry-details-heading">Definition</h2>
+      <p class="entry-layout__definition">{{ page.definition }}</p>
+    </section>
+  {% endif %}
+
+  {% if page.examples %}
+    <section class="entry-layout__section" aria-labelledby="entry-examples-heading">
+      <h2 id="entry-examples-heading">Examples</h2>
+      <ul class="entry-layout__examples">
+        {% for item in page.examples %}
+          <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if entry_content != '' %}
+    <section class="entry-layout__section entry-layout__notes" aria-labelledby="entry-notes-heading">
+      <h2 id="entry-notes-heading">Notes</h2>
+      <div class="entry-layout__body">
+        {{ content }}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if page.parent_page %}
+    <p class="entry-layout__backlink">
+      <a href="{{ page.parent_page | relative_url }}">Back to {{ page.section_name | default: 'Entries' }}</a>
+    </p>
+  {% endif %}
+</article>
