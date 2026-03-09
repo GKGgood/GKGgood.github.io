@@ -14,6 +14,7 @@
     {% if page_description %}
       <meta name="description" content="{{ page_description | markdownify | strip_html | normalize_whitespace | escape_once }}">
     {% endif %}
+    <link rel="icon" type="image/svg+xml" href="{{ '/assets/favicon.svg' | relative_url }}">
     <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}">
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
   </head>

@@ -51,6 +51,8 @@ Each entry has its own detail page, and the list pages are designed for quick br
   - notes
 - Built-in pronunciation button using browser speech synthesis
 - Published with GitHub Pages
+- Count the total views and mark the last update time
+
 
 ## Adding A New Word
 
