@@ -6,8 +6,18 @@ layout: default
   {% assign page_intro = page.intro | default: page.description %}
   {% if page.title or page_intro %}
     <header class="page-layout__header">
-      {% if page.title %}
-        <h1>{{ page.title }}</h1>
+      {% if page.title or page.sort_controls %}
+        <div class="page-layout__heading-row">
+          {% if page.title %}
+            <h1>{{ page.title }}</h1>
+          {% endif %}
+          {% if page.sort_controls %}
+            <div class="entry-sort-controls" role="group" aria-label="{{ page.sort_label | default: 'Sort entries' }}" data-sort-controls>
+              <button class="entry-sort-controls__option" type="button" data-sort-option="az" aria-pressed="true">A-Z</button>
+              <button class="entry-sort-controls__option" type="button" data-sort-option="recent" aria-pressed="false">Recently updated</button>
+            </div>
+          {% endif %}
+        </div>
       {% endif %}
       {% if page_intro %}
         <p class="page-layout__intro">{{ page_intro }}</p>
