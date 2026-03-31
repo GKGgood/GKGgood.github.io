@@ -37,6 +37,15 @@
         </div>
       </main>
 
+      {% unless page.body_class == "home-page" %}
+        <aside class="page-rail" aria-label="Page position indicator">
+          <div class="page-rail__track" aria-hidden="true">
+            <div class="page-rail__dot" data-scroll-dot></div>
+          </div>
+          <p class="page-rail__position" data-scroll-position>Top of page</p>
+        </aside>
+      {% endunless %}
+
       <footer class="site-footer">
         <div class="site-footer__inner">
           <p class="site-footer__brand">Built by <a href="https://github.com/GKGgood">GKGgood</a> with <a href="{{ '/about/' | relative_url }}">Jekyll</a></p>
@@ -154,19 +163,11 @@
 
         var buttons = controls.querySelectorAll("[data-sort-option]");
         var listParent = items[0].parentNode;
-        var recentDates = null;
-        var recentRequest = null;
-        var recentCacheKey = "entry-sort-recent-dates";
-        var recentCacheMaxAge = 60 * 60 * 1000;
-        var itemPaths = items.map(getSourcePath).filter(function (path, index, paths) {
-          return path && paths.indexOf(path) === index;
-        });
-
         if (!buttons.length || !listParent) {
           return;
         }
 
-        function getAlphaIndex(item) {
+        function getInitialIndex(item) {
           var value = Number.parseInt(item.getAttribute("data-alpha-index"), 10);
           return Number.isNaN(value) ? Number.MAX_SAFE_INTEGER : value;
         }
@@ -175,8 +176,8 @@
           return item.getAttribute("data-sort-title") || "";
         }
 
-        function getSourcePath(item) {
-          return (item.getAttribute("data-source-path") || "").replace(/^\/+/, "");
+        function getUpdatedAt(item) {
+          return item.getAttribute("data-updated-at") || "";
         }
 
         function updateButtons(activeOption) {
@@ -198,12 +199,12 @@
 
         function sortAlphabetically() {
           renderItems(items.slice().sort(function (left, right) {
-            var indexDiff = getAlphaIndex(left) - getAlphaIndex(right);
-            if (indexDiff) {
-              return indexDiff;
+            var titleDiff = getSortTitle(left).localeCompare(getSortTitle(right));
+            if (titleDiff) {
+              return titleDiff;
             }
 
-            return getSortTitle(left).localeCompare(getSortTitle(right));
+            return getInitialIndex(left) - getInitialIndex(right);
           }));
 
           updateButtons("az");
@@ -211,186 +212,18 @@
 
         function sortByRecent(datesByPath) {
           renderItems(items.slice().sort(function (left, right) {
-            var leftTime = Date.parse(datesByPath[getSourcePath(left)] || "") || 0;
-            var rightTime = Date.parse(datesByPath[getSourcePath(right)] || "") || 0;
+            var leftTime = Date.parse(getUpdatedAt(left)) || 0;
+            var rightTime = Date.parse(getUpdatedAt(right)) || 0;
             var timeDiff = rightTime - leftTime;
 
             if (timeDiff) {
               return timeDiff;
             }
 
-            return getAlphaIndex(left) - getAlphaIndex(right);
+            return getInitialIndex(left) - getInitialIndex(right);
           }));
 
           updateButtons("recent");
-        }
-
-        function hasDatesForCurrentPage(datesByPath) {
-          if (!datesByPath) {
-            return false;
-          }
-
-          return itemPaths.every(function (path) {
-            return Boolean(datesByPath[path]);
-          });
-        }
-
-        function mergeDates(baseDates, extraDates) {
-          var merged = {};
-
-          [baseDates, extraDates].forEach(function (source) {
-            if (!source || typeof source !== "object") {
-              return;
-            }
-
-            Object.keys(source).forEach(function (path) {
-              if (source[path]) {
-                merged[path] = source[path];
-              }
-            });
-          });
-
-          return merged;
-        }
-
-        function getMissingPaths(datesByPath) {
-          return itemPaths.filter(function (path) {
-            return !datesByPath[path];
-          });
-        }
-
-        function readRecentCache() {
-          if (!("localStorage" in window)) {
-            return null;
-          }
-
-          try {
-            var raw = window.localStorage.getItem(recentCacheKey);
-            if (!raw) {
-              return null;
-            }
-
-            var parsed = JSON.parse(raw);
-            if (!parsed || typeof parsed !== "object" || typeof parsed.savedAt !== "number" || !parsed.dates || typeof parsed.dates !== "object") {
-              return null;
-            }
-
-            if (Date.now() - parsed.savedAt > recentCacheMaxAge) {
-              window.localStorage.removeItem(recentCacheKey);
-              return null;
-            }
-
-            return parsed.dates;
-          } catch (error) {
-            return null;
-          }
-        }
-
-        function writeRecentCache(datesByPath) {
-          if (!("localStorage" in window) || !Object.keys(datesByPath).length) {
-            return;
-          }
-
-          try {
-            window.localStorage.setItem(recentCacheKey, JSON.stringify({
-              savedAt: Date.now(),
-              dates: datesByPath
-            }));
-          } catch (error) {
-            return;
-          }
-        }
-
-        function fetchCommitDate(sourcePath) {
-          if (!sourcePath) {
-            return Promise.resolve({ path: sourcePath, date: null });
-          }
-
-          var url = "https://api.github.com/repos/GKGgood/GKGgood.github.io/commits?path=" + encodeURIComponent(sourcePath) + "&per_page=1";
-
-          return window.fetch(url, {
-            headers: {
-              Accept: "application/vnd.github+json"
-            }
-          }).then(function (response) {
-            if (!response.ok) {
-              return null;
-            }
-
-            return response.json();
-          }).then(function (payload) {
-            var commit = Array.isArray(payload) ? payload[0] : null;
-            var date = commit && commit.commit && commit.commit.committer && commit.commit.committer.date;
-            if (!date) {
-              date = commit && commit.commit && commit.commit.author && commit.commit.author.date;
-            }
-
-            return {
-              path: sourcePath,
-              date: date || null
-            };
-          }).catch(function () {
-            return {
-              path: sourcePath,
-              date: null
-            };
-          });
-        }
-
-        function fetchMissingRecentDates(baseDates) {
-          var missingPaths = getMissingPaths(baseDates || {});
-          if (!missingPaths.length) {
-            return Promise.resolve(baseDates || {});
-          }
-
-          return Promise.all(missingPaths.map(function (sourcePath) {
-            return fetchCommitDate(sourcePath);
-          })).then(function (results) {
-            var fetchedDates = {};
-
-            results.forEach(function (result) {
-              if (result.path && result.date) {
-                fetchedDates[result.path] = result.date;
-              }
-            });
-
-            return mergeDates(baseDates, fetchedDates);
-          });
-        }
-
-        function fetchRecentDates() {
-          if (recentDates) {
-            if (hasDatesForCurrentPage(recentDates)) {
-              return Promise.resolve(recentDates);
-            }
-          }
-
-          if (recentRequest) {
-            return recentRequest;
-          }
-
-          if (!("fetch" in window) || !("Promise" in window)) {
-            return null;
-          }
-
-          recentDates = mergeDates(recentDates, readRecentCache());
-          if (hasDatesForCurrentPage(recentDates)) {
-            return Promise.resolve(recentDates);
-          }
-
-          recentRequest = fetchMissingRecentDates(recentDates).then(function (datesByPath) {
-            recentDates = datesByPath;
-
-            writeRecentCache(recentDates);
-            recentRequest = null;
-
-            return recentDates;
-          }).catch(function () {
-            recentRequest = null;
-            return {};
-          });
-
-          return recentRequest;
         }
 
         buttons.forEach(function (button) {
@@ -398,23 +231,7 @@
             var option = button.getAttribute("data-sort-option");
 
             if (option === "recent") {
-              var recentDatesRequest = fetchRecentDates();
-              if (!recentDatesRequest) {
-                sortAlphabetically();
-                return;
-              }
-
-              recentDatesRequest.then(function (datesByPath) {
-                if (!Object.keys(datesByPath).length) {
-                  sortAlphabetically();
-                  return;
-                }
-
-                sortByRecent(datesByPath);
-              }).catch(function () {
-                sortAlphabetically();
-              });
-
+              sortByRecent();
               return;
             }
 
@@ -423,6 +240,79 @@
         });
 
         sortAlphabetically();
+      })();
+
+      (function () {
+        var scrollDot = document.querySelector("[data-scroll-dot]");
+        var positionTarget = document.querySelector("[data-scroll-position]");
+        if (!scrollDot || !positionTarget) {
+          return;
+        }
+
+        var markers = Array.from(document.querySelectorAll(
+          ".page-layout__header h1, .page-layout__content > h2, .entry-layout__title, .entry-list-item, .entry-layout__section h2"
+        )).filter(function (node) {
+          return node && node.textContent && node.textContent.trim();
+        });
+
+        function getMarkerLabel(marker) {
+          if (!marker) {
+            return "";
+          }
+
+          if (marker.classList.contains("entry-list-item")) {
+            var link = marker.querySelector(".entry-list-item__link");
+            return link ? link.textContent.trim() : marker.textContent.trim();
+          }
+
+          return marker.textContent.trim();
+        }
+
+        function getScrollPercent() {
+          var doc = document.documentElement;
+          var scrollTop = window.scrollY || doc.scrollTop || 0;
+          var scrollRange = Math.max(doc.scrollHeight - window.innerHeight, 1);
+          return Math.max(0, Math.min(100, Math.round((scrollTop / scrollRange) * 100)));
+        }
+
+        function findCurrentMarker() {
+          if (!markers.length) {
+            return "";
+          }
+
+          var threshold = window.innerHeight * 0.28;
+          var current = markers[0];
+
+          markers.forEach(function (marker) {
+            if (marker.getBoundingClientRect().top <= threshold) {
+              current = marker;
+            }
+          });
+
+          return getMarkerLabel(current);
+        }
+
+        function updatePosition() {
+          var percent = getScrollPercent();
+          var label = findCurrentMarker();
+          scrollDot.style.setProperty("--scroll-progress", String(percent / 100));
+
+          if (percent <= 2) {
+            positionTarget.textContent = "Top of page";
+            return;
+          }
+
+          if (percent >= 98) {
+            positionTarget.textContent = "Bottom of page";
+            return;
+          }
+
+          positionTarget.textContent = label ? label + " • " + percent + "%" : percent + "% down the page";
+        }
+
+        window.addEventListener("scroll", updatePosition, { passive: true });
+        window.addEventListener("resize", updatePosition);
+        updatePosition();
       })();
     </script>
   </body>

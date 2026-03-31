@@ -3,6 +3,7 @@ title: Dilly dally
 meaning: 磨蹭，浪费时间
 definition: 磨蹭，浪费时间
 order: 63
+updated_at: 2026-03-31T15:00:05+08:00
 part_of_speech: phrase
 ---
 

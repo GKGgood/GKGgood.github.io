@@ -7,6 +7,7 @@ part_of_speech: noun
 examples:
   - I eat an apple every morning.
   - The apple on the table looks fresh.
+updated_at: 2026-03-31T15:00:05+08:00
 ---
 
 
