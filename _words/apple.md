@@ -9,4 +9,5 @@ examples:
   - The apple on the table looks fresh.
 ---
 
+
 Apple is a very common beginner word. You can use it when talking about fruit, food, or healthy habits.

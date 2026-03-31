@@ -460,6 +460,11 @@ hr {
   text-decoration-color: transparent;
 }
 
+.entry-sort-controls__option[aria-pressed="true"]:hover,
+.entry-sort-controls__option[aria-pressed="true"]:focus-visible {
+  text-decoration-color: currentColor;
+}
+
 .entry-list-item__summary,
 .entry-list-item__subline {
   margin: 0;

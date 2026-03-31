@@ -223,4 +223,5 @@ Then continue editing entries normally.
 - If you change `_config.yml`, restart the Jekyll server
 - Keep one file per word or phrase
 - Use simple lowercase file names
+- Save Markdown files as UTF-8 to keep Chinese text and phonetic symbols readable
 - Commit often to keep your notebook history clear
